@@ -4,6 +4,7 @@ import sys
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+from functions.call_function import call_function
 from functions.get_files_info import schema_get_files_info
 from functions.get_file_content import schema_get_file_content
 from functions.run_python_file import schema_run_python_file
@@ -58,7 +59,12 @@ All paths you provide should be relative to the working directory. You do not ne
 
     if response.function_calls:
         for fun in response.function_calls:
-            print(f"Calling function: {fun.name}({fun.args})")
+            verbose = True
+            function_result = call_function(fun, verbose)
+            if not function_result.parts[0].function_response.response:
+                raise Exception("Error calling function")
+            if verbose:
+                print(f"-> {function_result.parts[0].function_response.response}")
     else:
         print(response.text)
 
