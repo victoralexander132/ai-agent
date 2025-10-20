@@ -49,24 +49,36 @@ All paths you provide should be relative to the working directory. You do not ne
 
     messages = [types.Content(role="user", parts=[types.Part(text=user_prompt)])]
 
-    response = client.models.generate_content(
-        model=model_name,
-        contents=messages,
-        config=types.GenerateContentConfig(
-            tools=[available_functions], system_instruction=system_prompt
-        ),
-    )
+    MAX_ITERATIONS = 20
+    for n in range(MAX_ITERATIONS):
+        try:
+            response = client.models.generate_content(
+                model=model_name,
+                contents=messages,
+                config=types.GenerateContentConfig(
+                    tools=[available_functions], system_instruction=system_prompt
+                ),
+            )
+            if response.candidates:
+                for candidate in response.candidates:
+                    if candidate.content:
+                        messages.append(candidate.content)
 
-    if response.function_calls:
-        for fun in response.function_calls:
-            verbose = True
-            function_result = call_function(fun, verbose)
-            if not function_result.parts[0].function_response.response:
-                raise Exception("Error calling function")
-            if verbose:
-                print(f"-> {function_result.parts[0].function_response.response}")
-    else:
-        print(response.text)
+            if response.function_calls:
+                for fun in response.function_calls:
+                    print(f"- Calling function: {fun.name}")
+                    function_result = call_function(fun, is_verbose)
+                    tool_msg = types.Content(role="user", parts=function_result.parts)
+                    messages.append(tool_msg)
+                    if not function_result.parts[0].function_response.response:
+                        raise Exception("Error calling function")
+            else:
+                if response.text:
+                    print(response.text)
+                    break
+
+        except Exception as e:
+            print(f"Error: {e}")
 
     if is_verbose:
         print(f"User prompt: {user_prompt}")

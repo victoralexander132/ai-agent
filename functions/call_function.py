@@ -7,10 +7,6 @@ from functions.write_file import write_file
 
 def call_function(function_call_part, verbose=False):
     function_name = function_call_part.name
-    if verbose:
-        print(f"Calling function: {function_name}({function_call_part.args})")
-    else:
-        print(f" - Calling function: {function_name}")
     working_directory = "./calculator"
     function_call_part.args["working_directory"] = working_directory
 
